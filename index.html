@@ -1,0 +1,784 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=1200">
+    <title>Recipe Chatbot</title>
+    <style>
+        html, body {
+            height: 100%;
+            margin: 0;
+            padding: 0;
+        }
+        body {
+            font-family: 'Segoe UI', Arial, sans-serif;
+            background: #f3f3f3;
+            min-height: 100vh;
+        }
+        .container {
+            display: flex;
+            min-height: 100vh;
+            width: 100vw;
+        }
+        /* Sidebar */
+        .sidebar {
+            width: 100;
+            min-width: 0px;
+            color: #bfc3e6;
+            display: flex;
+            flex-direction: row;
+            padding: 0;
+            border-top-left-radius: 12px;
+            background: #15183b;
+            height: 100vh;
+        }
+        .sidebar-nav-btn {
+            background: none;
+            border: none;
+            color: #bfc3e6;
+            font-size: 18px;
+            font-weight: 400;
+            padding: 6px 0 6px 18px;
+            text-align: left;
+            width: 100%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            transition: color 0.2s, background 0.2s;
+        }
+        .sidebar-nav-btn:hover, .sidebar-nav-btn:focus {
+            background: #23255a;
+            color: #fff;
+            outline: none;
+        }
+
+        .sidebar-icons {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 30px 0 10px 0;
+            background: #15183b;
+            width: 70px; /* Fixed width for icons */
+            min-width: 60px;
+        }
+        .icon-btn {
+            width: 38px;
+            height: 38px;
+            margin-bottom: 24px;
+            border-radius: 10px;
+            background: #23255a;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .icon-btn.selected {
+            background: #fff;
+        }
+        .icon-btn svg {
+            width: 22px;
+            height: 22px;
+            fill: #bfc3e6;
+        }
+        .icon-btn.selected svg {
+            fill: #191c4b;
+        }
+        .sidebar-content {
+            flex: 1;
+            padding: 24px 16px 0 16px;
+            background: #23255a; /* Match or contrast as you like */
+            min-width: 0;
+            box-sizing: border-box;
+            height: 100vh;
+            overflow-y: auto;
+        }
+        .site-structure-label {
+            font-size: 15px;
+            color: #bfc3e6;
+            letter-spacing: 1px;
+            margin-bottom: 18px;
+            font-weight: 600;
+        }
+        .filter-container {
+            position: relative;
+            margin-bottom: 32px;
+            width: 100%;           /* Ensure it fills the sidebar width */
+            box-sizing: border-box;/* Include padding in width */
+            max-width: 100%;       /* Prevent overflow */
+            overflow: visible;
+        }
+        .search-icon {
+            position: absolute;
+            left: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #bfc3e6;
+            font-size: 18px;
+        }
+        .filter-input {
+            width: 100%;
+            min-width: 0;
+            padding: 10px 10px 10px 38px;
+            background: #23255a;
+            border: none;
+            border-radius: 4px;
+            color: #fff;
+            font-size: 16px;
+            outline: none;
+            box-sizing: border-box;
+        }
+        .filter-input::placeholder {
+            color: #bfc3e6;
+        }
+        .site-tree {
+            list-style: none;
+            padding-left: 0;
+            margin-top: 28px;
+        }
+        .site-tree li {
+            margin-bottom: 18px;
+            position: relative;
+            padding-left: 28px;
+            font-size: 18px;
+            color: #bfc3e6;
+            font-weight: 400;
+        }
+        .site-tree .node-dot {
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            background: #bfc3e6;
+            border-radius: 50%;
+            position: absolute;
+            left: 0;
+            top: 7px;
+        }
+        .site-tree ul {
+            list-style: none;
+            margin-left: 16px;
+            padding-left: 18px;
+            border-left: 2px solid #bfc3e6;
+        }
+        /* Admin login at bottom */
+        .sidebar-bottom {
+            padding: 32px;
+            margin-top: auto;
+        }
+        .admin-login-btn {
+            color: #bfc3e6;
+            background: #23255a;
+            padding: 12px 0;
+            text-align: center;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            display: block;
+            transition: background 0.2s, color 0.2s;
+            border: none;
+            width: 100%;
+            font-size: 17px;
+            letter-spacing: 0.5px;
+        }
+        .admin-login-btn:hover {
+            background: #fff;
+            color: #191c4b;
+        }
+        /* Main Content */
+        .main-content {
+            flex: 1;
+            background: #ededed;
+            display: flex;
+            flex-direction: column;
+            min-width: 0;
+        }
+        .top-bar {
+            height: 56px;
+            background: #fff;
+            display: flex;
+            align-items: center;
+            padding-left: 32px;
+            border-bottom: 1px solid #eee;
+            font-size: 20px;
+            color: #6b6b6b;
+            font-weight: 500;
+        }
+        .top-bar svg {
+            width: 22px;
+            height: 22px;
+            margin-right: 8px;
+            vertical-align: middle;
+            fill: #bfc3e6;
+        }
+        .chat-area {
+            flex: 1 1 auto;
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            padding: 48px 48px 0 48px;
+            background: #ededed;
+            min-width: 0;
+            height: 100%;
+            box-sizing: border-box;
+        }
+        #chatBox {
+            flex: 1 1 auto;
+            width: 100%;
+            max-height: 60vh;
+            overflow-y: auto;
+            margin-bottom: 16px;
+            /* Optional: set a max-height or min-height if needed */
+            display: flex;
+            flex-direction: column;
+        }
+        .chat-header {
+            background: #43b04a;
+            color: #fff;
+            font-size: 22px;
+            font-weight: 500;
+            padding: 18px 0;
+            width: 100%;
+            border-radius: 8px 8px 0 0;
+            text-align: center;
+            margin-bottom: 32px;
+        }
+        .chat-bubble {
+            background: #d6f3ff;
+            color: #222;
+            padding: 22px 32px;
+            border-radius: 8px;
+            margin-bottom: 38px;
+            width: 100%;
+            box-sizing: border-box;
+            font-size: 19px;
+            font-weight: 400;
+        }
+        .chat-input-row {
+            width: 100%;
+            display: flex;
+            margin-top: auto;
+            margin-bottom: 32px;
+            position: sticky;
+            bottom: 0;
+            background: #ededed;
+            z-index: 2;
+            /* Remove margin-bottom if you want it flush with the bottom */
+        }
+        .chat-input {
+            flex: 1;
+            padding: 18px 18px;
+            border: 1px solid #d4d4d4;
+            border-radius: 4px 0 0 4px;
+            font-size: 18px;
+            resize: none;
+            outline: none;
+            background: #fff;
+            color: #222;
+        }
+        .send-btn {
+            background: #43b04a;
+            color: #fff;
+            border: none;
+            padding: 0 38px;
+            font-size: 18px;
+            border-radius: 0 4px 4px 0;
+            cursor: pointer;
+            font-weight: 500;
+            transition: background 0.2s;
+        }
+        .send-btn:hover {
+            background: #35933c;
+        }
+        /* Chat message bubbles for user/admin (system logic) */
+        .chat-message {
+            margin: 10px 0;
+            max-width: 80%;
+            padding: 14px 20px;
+            border-radius: 8px;
+            font-size: 17px;
+            line-height: 1.5;
+        }
+        .chat-message.user {
+            background: #fff;
+            color: #222;
+            align-self: flex-end;
+            border: 1px solid #d4d4d4;
+        }
+        .chat-message.bot {
+            background: #e6f7ff;
+            color: #222;
+            align-self: flex-start;
+        }
+        /* Admin panel styles */
+        .admin-panel {
+            background: #fff;
+            margin: 40px auto 0 auto;
+            width: 80%;
+            border-radius: 8px;
+            padding: 24px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.07);
+            max-height: 70vh;         /* Limit height */
+            overflow-y: auto;
+        }
+        .admin-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 24px;
+            font-size: 22px;
+            font-weight: 500;
+        }
+        .back-btn {
+            background: #4caf50;
+            color: #fff;
+            border: none;
+            padding: 8px 24px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        .admin-message-block {
+            background: #f5f5f5;
+            margin-bottom: 18px;
+            padding: 14px;
+            border-radius: 6px;
+        }
+        #adminChatMessages {
+            max-height: 55vh;
+            overflow-y: auto;
+        }
+        @media (max-width: 1200px) {
+            .sidebar { width: 250px; }
+            .chat-area { padding: 32px 10px 0 10px; }
+        }
+        @media (max-width: 900px) {
+            .container { flex-direction: column; }
+            .sidebar { width: 100%; flex-direction: row; }
+            .main-content { padding: 0 10px; }
+            .chat-area { width: 100%; }
+        }
+    </style>
+</head>
+<body>
+  <div class="container">
+    <!-- Sidebar -->
+    <aside class="sidebar">
+      <div class="sidebar-icons">
+        <button class="icon-btn" title="Home" onclick="goHome()">
+          <!-- Home SVG -->
+          <svg viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
+        </button>
+        <button class="icon-btn selected" title="Dashboard" onclick="showRecipePage()">
+          <!-- Dashboard SVG -->
+          <svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/></svg>
+        </button>
+        <button class="icon-btn" title="Settings" onclick="alert('Settings coming soon!')">
+          <!-- Settings SVG -->
+          <svg viewBox="0 0 24 24"><path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22l-1.92 3.32c-.12.21-.07.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/></svg>
+        </button>
+        <div class="sidebar-bottom">
+            <button class="admin-login-btn" onclick="showAdmin()">Admin</button>
+        </div>
+      </div>
+      <div class="sidebar-content">
+        <div class="site-structure-label">SITE STRUCTURE</div>
+        <div class="filter-container">
+          <span class="search-icon">&#128269;</span>
+          <input type="text" class="filter-input" placeholder="Filter...">
+        </div>
+        <ul class="site-tree">
+          <li>
+            <button class="sidebar-nav-btn" onclick="goHome()">
+              <span class="node-dot"></span> Home
+            </button>
+          </li>
+          <li>
+            <button class="sidebar-nav-btn" onclick="showRecipePage()">
+              <span class="node-dot"></span> Recipe
+            </button>
+          </li>
+        </ul>
+      
+    </aside>
+    <!-- Main Content -->
+    <div class="main-content">
+      <div class="top-bar">
+        <svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2" fill="#bfc3e6"/></svg>
+        Chatbot
+      </div>
+      <div class="chat-area" id="mainView">
+        <div class="chat-header">Recipe Chatbot</div>
+        <div id="chatBox" class="chat-box">
+          <div class="chat-bubble" id="botGreeting">
+            Hello! I'm your Recipe Chatbot. What recipe are you looking for today?
+          </div>
+        </div>
+        <div class="chat-input-row">
+          <input id="userChatInput" class="chat-input" type="text" placeholder="recipe:....">
+          <button class="send-btn" onclick="sendUserMessage()">Send</button>
+        </div>
+      </div>
+      <!-- Admin Panel -->
+      <div id="adminView" style="display: none;">
+        <div class="admin-panel">
+          <div class="admin-header">
+            <span>Admin Panel</span>
+            <button class="back-btn" onclick="goHome()">Back to Chat</button>
+          </div>
+          <div id="adminChatMessages"></div>
+        </div>
+      </div>
+      <div id="recipeView" style="display: none;">
+        <div class="admin-panel">
+          <div class="admin-header">
+            <span>Recipe Submissions</span>
+            <button class="back-btn" onclick="goHome()">Back to Chat</button>
+          </div>
+          <div id="recipeList"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <script>
+    // SYSTEM SCRIPT (unchanged)
+    let chatMessages = [];
+    let nextMessageId = 1;
+    let savedChatPairs = {};
+    function loadSavedChatPairs() {
+      const stored = localStorage.getItem("savedChatPairs");
+      if (stored) {
+        savedChatPairs = JSON.parse(stored);
+      } else {
+        savedChatPairs = {};
+      }
+    }
+    function updateSavedChatPairsStorage() {
+      localStorage.setItem("savedChatPairs", JSON.stringify(savedChatPairs));
+    }
+    loadSavedChatPairs();
+    function updateChatBox() {
+      const chatBox = document.getElementById("chatBox");
+      chatBox.innerHTML = "";
+      // Bot greeting
+      const botGreeting = document.createElement("div");
+      botGreeting.className = "chat-bubble";
+      botGreeting.textContent = "Hello! I'm your Recipe Chatbot. What recipe are you looking for today?";
+      chatBox.appendChild(botGreeting);
+      chatMessages.forEach(msg => {
+        // Display user message
+        const userDiv = document.createElement("div");
+        userDiv.className = "chat-message user";
+        userDiv.textContent = msg.message;
+        chatBox.appendChild(userDiv);
+        // Display admin reply (or "Not Available" if empty)
+        const adminDiv = document.createElement("div");
+        adminDiv.className = "chat-message bot";
+        adminDiv.textContent = msg.adminReply && msg.adminReply.trim() !== "" ? msg.adminReply : "Not Available";
+        chatBox.appendChild(adminDiv);
+      });
+      chatBox.scrollTop = chatBox.scrollHeight;
+    }
+    function updateAdminChatView() {
+      const container = document.getElementById("adminChatMessages");
+      container.innerHTML = "";
+      chatMessages.forEach(msg => {
+        const wrapper = document.createElement("div");
+        wrapper.className = "admin-message-block";
+        const userP = document.createElement("p");
+        userP.textContent = "User: " + msg.message;
+        wrapper.appendChild(userP);
+        if (msg.adminReply && msg.adminReply.trim() !== "") {
+          const adminP = document.createElement("p");
+          adminP.textContent = "Admin: " + msg.adminReply;
+          wrapper.appendChild(adminP);
+        } else {
+          const replyInput = document.createElement("input");
+          replyInput.type = "text";
+          replyInput.placeholder = "Enter reply";
+          replyInput.id = "replyInput-" + msg.id;
+          wrapper.appendChild(replyInput);
+          const replyButton = document.createElement("button");
+          replyButton.textContent = "Reply";
+          replyButton.onclick = function() { submitAdminReply(msg.id); };
+          wrapper.appendChild(replyButton);
+        }
+        container.appendChild(wrapper);
+      });
+    }
+
+    function submitAdminReply(msgId) {
+      const input = document.getElementById("replyInput-" + msgId);
+      const reply = input.value.trim();
+      if (reply === "") {
+        alert("Please enter a reply.");
+        return;
+      }
+      chatMessages.forEach(msg => {
+        if (msg.id === msgId) {
+          msg.adminReply = reply;
+          savedChatPairs[msg.message] = reply;
+        }
+      });
+      updateSavedChatPairsStorage();
+      updateAdminChatView();
+      updateChatBox();
+    }
+    function showAdmin() {
+      document.getElementById("mainView").style.display = "none";
+      document.getElementById("adminView").style.display = "block";
+      updateAdminChatView();
+    }
+    // Enter key for chat input
+    document.addEventListener('DOMContentLoaded', function(){
+      document.getElementById('userChatInput').addEventListener('keypress', function(e){
+        if(e.key === 'Enter'){
+          e.preventDefault();
+          sendUserMessage();
+        }
+      });
+      updateChatBox();
+    });
+    function goHomePage() {
+      alert("Go to Home page!"); // Replace with your navigation logic
+    }
+
+    function goHome() {
+      document.getElementById("adminView").style.display = "none";
+      document.getElementById("recipeView").style.display = "none";
+      document.getElementById("mainView").style.display = "flex";
+      updateChatBox();
+    }
+
+    function updateRecipeList() {
+      const container = document.getElementById("recipeList");
+      // Approved recipes section
+      let approvedHtml = "<h3 style='margin-top:0;'>Approved Recipes</h3>";
+     const approvedRecipes = recipes.filter(r => r.approved);
+      if (approvedRecipes.length === 0) {
+        approvedHtml += "<div style='color:#888;margin-bottom:18px;'>No approved recipes yet.</div>";
+      } else {
+        approvedRecipes.forEach(r => {
+        approvedHtml += `
+          <div class="admin-message-block">
+            <strong>✅ ${r.name}</strong>
+            <div style="font-size:13px;color:#888;">Submitted by: ${r.submittedBy}</div>
+            <div><b>Ingredients:</b> ${r.ingredients}</div>
+            <div><b>Instructions:</b> ${r.instructions}</div>
+          </div>
+        `;
+      });
+    }
+
+      // Submission form
+      let formHtml = `
+        <div style="margin-bottom:18px;">
+          <input id="recipeNameInput" type="text" placeholder="Recipe Name" style="width:30%;padding:8px;margin-bottom:6px;">
+          <input id="recipeIngredientsInput" type="text" placeholder="Ingredients (comma separated)" style="width:30%;padding:8px;margin-left:8px;margin-bottom:6px;">
+          <input id="recipeInstructionsInput" type="text" placeholder="Instructions/Procedures" style="width:30%;padding:8px;margin-left:8px;margin-bottom:6px;">
+          <button onclick="submitRecipe()" style="padding:8px 18px;margin-left:8px;">Submit</button>
+        </div>
+      `;
+
+      // Pending recipes for admin approval (optional: show only if admin)
+      let pendingHtml = "";
+      const pendingRecipes = recipes.filter(r => !r.approved);
+      if (pendingRecipes.length > 0) {
+        pendingHtml += "<h4>Pending Approval</h4>";
+        pendingRecipes.forEach(r => {
+          pendingHtml += `
+            <div class="admin-message-block">
+              <strong>⏳ ${r.name}</strong>
+              <div style="font-size:13px;color:#888;">Submitted by: ${r.submittedBy}</div>
+              <div><b>Ingredients:</b> ${r.ingredients}</div>
+              <div><b>Instructions:</b> ${r.instructions}</div>
+              <button onclick="approveRecipe(${r.id})" style="margin-top:8px;">Approve</button>
+            </div>
+          `;
+        });
+      }
+      container.innerHTML = approvedHtml + formHtml + pendingHtml;
+    }
+
+    function sendUserMessage() {
+      const input = document.getElementById("userChatInput");
+      const message = input.value.trim();
+      if (message === "") {
+        alert("Please enter a message.");
+        return;
+      }
+
+      let autoReply = "";
+      // Check for recipe: query
+      if (message.toLowerCase().startsWith("recipe:")) {
+        const recipeName = message.substring(7).trim().toLowerCase();
+        const found = recipes.find(
+          r => r.approved && r.name.toLowerCase() === recipeName
+        );
+        if (found) {
+          autoReply = 
+            `Recipe: ${found.name}\n` +
+            `Ingredients: ${found.ingredients}\n` +
+            `Instructions: ${found.instructions}`;
+        } else {
+          autoReply = "Sorry, that recipe was not found or is not approved yet.";
+        }
+      } else {
+        // Default logic (use savedChatPairs if available)
+        autoReply = savedChatPairs.hasOwnProperty(message) ? savedChatPairs[message] : "";
+      }
+
+      const msgObj = {
+        id: nextMessageId++,
+        sender: "user",
+        message: message,
+        adminReply: autoReply
+      };
+      chatMessages.push(msgObj);
+      input.value = "";
+      updateChatBox();
+      updateAdminChatView();
+    }
+
+    let recipes = [];
+    let nextRecipeId = 1;
+
+    // Load recipes from server
+    function loadRecipes(callback) {
+      fetch('recipes.php')
+        .then(res => res.json())
+        .then(data => {
+          recipes = data || [];
+          if (callback) callback();
+        });
+    }
+
+    // Save a new recipe to server
+    function saveRecipeToServer(recipe, callback) {
+      fetch('recipes.php', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify(recipe)
+      }).then(res => res.json())
+        .then(data => {
+          if (callback) callback(data);
+        });
+    }
+
+    function submitRecipe() {
+      const nameInput = document.getElementById("recipeNameInput");
+      const ingredientsInput = document.getElementById("recipeIngredientsInput");
+      const instructionsInput = document.getElementById("recipeInstructionsInput");
+      const name = nameInput.value.trim();
+      const ingredients = ingredientsInput.value.trim();
+      const instructions = instructionsInput.value.trim();
+      if (!name || !ingredients || !instructions) {
+        alert("Please fill in all fields.");
+        return;
+      }
+      const recipe = {
+        id: Date.now(),
+        name,
+        ingredients,
+        instructions,
+        submittedBy: "user",
+        approved: false
+      };
+      saveRecipeToServer(recipe, function(resp) {
+        if (resp.success) {
+          loadRecipes(updateRecipeList);
+          nameInput.value = "";
+          ingredientsInput.value = "";
+          instructionsInput.value = "";
+        } else {
+          alert("Failed to save recipe.");
+        }
+      });
+    }
+
+    function approveRecipe(recipeId) {
+      // Find the recipe to approve
+      const recipeIndex = recipes.findIndex(r => r.id == recipeId);
+      if (recipeIndex !== -1) {
+        // Approve the selected recipe
+        recipes[recipeIndex].approved = true;
+        const approvedRecipe = recipes[recipeIndex];
+
+        // Remove all other unapproved recipes with the same name (case-insensitive)
+        const filteredRecipes = recipes.filter(r =>
+          r.id === recipeId ||
+          r.name.toLowerCase() !== approvedRecipe.name.toLowerCase() ||
+          r.approved
+        );
+
+        // Overwrite all recipes on the server (removes the pending duplicates)
+        fetch('recipes.php?overwrite=1', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify(filteredRecipes)
+        })
+        .then(res => res.json())
+        .then(data => {
+          if (data.success) {
+            loadRecipes(updateRecipeList);
+          } else {
+            alert("Failed to approve recipe.");
+        }
+        });
+      }
+    }
+
+    // When showing the recipe page, always load from server
+    function showRecipePage() {
+      document.getElementById("mainView").style.display = "none";
+      document.getElementById("adminView").style.display = "none";
+      document.getElementById("recipeView").style.display = "block";
+      loadRecipes(updateRecipeList);
+    }
+
+    // When user asks for a recipe, always use the loaded recipes array
+    function sendUserMessage() {
+      const input = document.getElementById("userChatInput");
+      const message = input.value.trim();
+      if (message === "") {
+        alert("Please enter a message.");
+        return;
+      }
+
+      let autoReply = "";
+      if (message.toLowerCase().startsWith("recipe:")) {
+        const recipeName = message.substring(7).trim().toLowerCase();
+        const found = recipes.find(
+          r => r.approved && r.name.toLowerCase() === recipeName
+        );
+        if (found) {
+        autoReply =
+            `Recipe: ${found.name}\n` +
+            `Ingredients: ${found.ingredients}\n` +
+            `Instructions: ${found.instructions}`;
+        } else {
+        autoReply = "Sorry, that recipe was not found or is not approved yet.";
+        }
+      } else {
+        autoReply = savedChatPairs.hasOwnProperty(message) ? savedChatPairs[message] : "";
+      }
+
+      const msgObj = {
+        id: nextMessageId++,
+        sender: "user",
+        message: message,
+        adminReply: autoReply
+      };
+      chatMessages.push(msgObj);
+      input.value = "";
+      updateChatBox();
+      updateAdminChatView();
+    }
+
+    // On page load, load recipes
+    document.addEventListener('DOMContentLoaded', function(){
+      loadRecipes(updateRecipeList);
+    // ...existing code...
+    });
+  </script>
+</body>
+</html>
